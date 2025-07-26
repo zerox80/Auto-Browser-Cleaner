@@ -1,0 +1,124 @@
+# Auto Browser Cleaner
+
+**Auto Browser Cleaner** is a lightweight Chrome extension that automatically clears your browsing data every time Chrome starts, and also provides a one-click manual “Clean Now” button.
+
+---
+
+## Features
+
+- **Automatic Cleaning**  
+  Clears history, cache, cookies & download history on browser startup.  
+
+- **Manual Cleaning**  
+  Click the toolbar icon → **Clean Now** to clear data on demand.  
+
+- **Zero Configuration**  
+  Works out of the box—no settings required.  
+
+- **Customizable**  
+  Easily tweak which data types to clear and the time range in `background.js`.
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Google Chrome (v57+)
+
+### Installation
+
+1. Clone or download this repository:
+
+   ```bash
+   git clone https://github.com/zerox80/Auto-Browser-Cleaner.git
+   ```
+
+2. Open Chrome and navigate to:
+
+   ```
+   chrome://extensions
+   ```
+
+3. Enable **Developer mode** (toggle in the top right).
+
+4. Click **Load unpacked**, then select the project’s root folder.
+
+5. The Auto Browser Cleaner icon should now appear in your toolbar.
+
+---
+
+## Usage
+
+- **Automatic:**  
+  Every time you launch Chrome, the extension runs in the background and clears your data.
+
+- **Manual:**  
+  Click the extension icon → click **Clean Now** in the popup.
+
+---
+
+## Configuration
+
+To adjust what gets cleared or change the time window:
+
+1. Open `background.js`.
+
+2. Locate the `chrome.browsingData.remove` call:
+
+   ```javascript
+   chrome.browsingData.remove(
+     { since: 0 },   // 0 = from the beginning of time
+     {
+       history:   true,
+       cache:     true,
+       cookies:   true,
+       downloads: true
+     }
+   );
+   ```
+
+- `since`: timestamp in milliseconds  
+  *(e.g. `Date.now() - 24*60*60*1000` for the last 24 hours)*
+
+- Toggle any data type by setting its boolean to `false`.
+
+3. Save your changes and reload the extension at `chrome://extensions`.
+
+---
+
+## File Structure
+
+```
+Auto-Browser-Cleaner/
+├── icon16.png        # 16×16 toolbar icon
+├── icon48.png        # 48×48 toolbar icon
+├── icon128.png       # 128×128 Chrome Web Store icon
+├── icon.svg          # Source vector icon
+├── manifest.json     # Extension metadata & permissions
+├── background.js     # Clears browsing data on startup
+├── popup.html        # Manual clean UI
+├── popup.js          # Popup logic (“Clean Now” handler)
+└── LICENSE           # MIT License
+```
+
+---
+
+## Development
+
+1. Clone the repo and load as unpacked in Developer Mode (see above).
+2. Make your changes to the source files.
+3. Reload the extension on `chrome://extensions`.
+
+---
+
+## Contributing
+
+Contributions, issues & feature requests are welcome!  
+Please open a GitHub issue or submit a pull request.
+
+---
+
+## License
+
+This project is MIT-licensed. See the [LICENSE](./LICENSE) file for details.
