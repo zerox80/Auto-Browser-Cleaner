@@ -1,5 +1,8 @@
+"use strict";
+
 // Konstante für 4 Tage in Minuten
 const VIER_TAGE_IN_MINUTEN = 4 * 24 * 60; // 5760 Minuten
+const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 
 // Beim Installieren der Extension
 chrome.runtime.onInstalled.addListener(() => {
@@ -25,60 +28,71 @@ chrome.runtime.onInstalled.addListener(() => {
 // Wenn der Alarm ausgelöst wird
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === 'clearBrowserData') {
-    clearAllBrowserData().catch(() => {});
+    clearAllBrowserData().catch((err) => {
+      console.error('Fehler beim periodischen Löschen:', err);
+    });
   }
 });
 
 // Funktion zum Löschen der Browserdaten
-function clearAllBrowserData() {
-  const oneYearAgo = (new Date()).getTime() - (1000 * 60 * 60 * 24 * 365);
+async function clearAllBrowserData() {
+  const oneYearAgo = Date.now() - ONE_YEAR_MS;
 
-  return new Promise((resolve, reject) => {
-    chrome.browsingData.remove({
-      "since": oneYearAgo
-    }, {
-      "appcache": true,
-      "cache": true,
-      "cacheStorage": true,
-      "cookies": true,
-      "downloads": false, // Downloads behalten
-      "fileSystems": true,
-      "formData": true,
-      "history": true,
-      "indexedDB": true,
-      "localStorage": true,
-      "passwords": false, // Passwörter behalten
-      "serviceWorkers": true,
-      "webSQL": true
-    }, () => {
-      if (chrome.runtime.lastError) {
-        console.error('Fehler beim Löschen der Browserdaten:', chrome.runtime.lastError);
-        reject(chrome.runtime.lastError);
-        return;
-      }
-      console.log('Browserdaten wurden gelöscht');
-
-      // Aktualisiere die Zeit der letzten Löschung und den Zähler
-      chrome.storage.local.get(['cleanCount'], (result) => {
+  await new Promise((resolve, reject) => {
+    chrome.browsingData.remove(
+      { since: oneYearAgo },
+      {
+        appcache: true,
+        cache: true,
+        cacheStorage: true,
+        cookies: true,
+        downloads: false, // Downloads behalten
+        fileSystems: true,
+        formData: true,
+        history: true,
+        indexedDB: true,
+        localStorage: true,
+        passwords: false, // Passwörter behalten
+        serviceWorkers: true,
+        webSQL: true
+      },
+      () => {
         if (chrome.runtime.lastError) {
-          console.error('Fehler beim Lesen des cleanCount:', chrome.runtime.lastError);
           reject(chrome.runtime.lastError);
           return;
         }
-        const count = (result.cleanCount || 0) + 1;
-        chrome.storage.local.set({
-          lastCleanTime: Date.now(),
-          cleanCount: count
-        }, () => {
-          if (chrome.runtime.lastError) {
-            console.error('Fehler beim Speichern des cleanCount:', chrome.runtime.lastError);
-            reject(chrome.runtime.lastError);
-            return;
-          }
-          resolve();
-        });
-      });
+        resolve();
+      }
+    );
+  });
+
+  console.log('Browserdaten wurden gelöscht');
+
+  const { cleanCount = 0 } = await new Promise((resolve) => {
+    chrome.storage.local.get(['cleanCount'], (result) => {
+      if (chrome.runtime.lastError) {
+        console.error('Fehler beim Lesen des cleanCount:', chrome.runtime.lastError);
+        resolve({ cleanCount: 0 });
+        return;
+      }
+      resolve(result);
     });
+  });
+
+  await new Promise((resolve, reject) => {
+    chrome.storage.local.set(
+      {
+        lastCleanTime: Date.now(),
+        cleanCount: cleanCount + 1
+      },
+      () => {
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+          return;
+        }
+        resolve();
+      }
+    );
   });
 }
 
