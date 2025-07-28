@@ -1,13 +1,13 @@
 # Auto Browser Cleaner
 
-**Auto Browser Cleaner** is a lightweight Chrome extension that automatically clears your browsing data every time Chrome starts, and also provides a one-click manual “Clean Now” button.
+**Auto Browser Cleaner** is a lightweight Chrome extension that automatically clears your browsing data every four days and also provides a one-click manual “Clean Now” button.
 
 ---
 
 ## Features
 
-- **Automatic Cleaning**  
-  Clears history, cache, cookies & download history on browser startup.  
+- **Automatic Cleaning**
+  Clears history, cache, cookies & download history automatically every four days.
 
 - **Manual Cleaning**  
   Click the toolbar icon → **Clean Now** to clear data on demand.  
@@ -50,8 +50,8 @@
 
 ## Usage
 
-- **Automatic:**  
-  Every time you launch Chrome, the extension runs in the background and clears your data.
+- **Automatic:**
+  The extension runs in the background every four days and clears your data.
 
 - **Manual:**  
   Click the extension icon → click **Clean Now** in the popup.
@@ -67,8 +67,8 @@ To adjust what gets cleared or change the time window:
 2. Locate the `chrome.browsingData.remove` call:
 
    ```javascript
-   chrome.browsingData.remove(
-     { since: 0 },   // 0 = from the beginning of time
+  chrome.browsingData.remove(
+    { since: Date.now() - 365*24*60*60*1000 },   // last year
      {
        history:   true,
        cache:     true,
@@ -78,8 +78,8 @@ To adjust what gets cleared or change the time window:
    );
    ```
 
-- `since`: timestamp in milliseconds  
-  *(e.g. `Date.now() - 24*60*60*1000` for the last 24 hours)*
+- `since`: timestamp in milliseconds
+  *(e.g. `Date.now() - 24*60*60*1000` for the last 24 hours; default is one year)*
 
 - Toggle any data type by setting its boolean to `false`.
 
