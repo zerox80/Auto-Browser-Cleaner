@@ -72,7 +72,7 @@ To adjust what gets cleared or change the time window:
 
    ```javascript
   chrome.browsingData.remove(
-    { since: Date.now() - 365*24*60*60*1000 },   // last year
+    { since: lastCleanTime || Date.now() - 365*24*60*60*1000 }, // since last clean or max 1 year
      {
        history:   true,
        cache:     true,
@@ -83,7 +83,7 @@ To adjust what gets cleared or change the time window:
    ```
 
 - `since`: timestamp in milliseconds
-  *(e.g. `Date.now() - 24*60*60*1000` for the last 24 hours; default is one year)*
+  *(e.g. `Date.now() - 24*60*60*1000` for the last 24 hours; default is the last run or one year)*
 
 - Toggle any data type by setting its boolean to `false`.
 
