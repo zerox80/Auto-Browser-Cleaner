@@ -15,8 +15,12 @@
 - **Zero Configuration**  
   Works out of the box—no settings required.  
 
-- **Customizable**  
+- **Customizable**
   Easily tweak which data types to clear and the time range in `background.js`.
+- **Security First**
+  Built with a strict Content Security Policy to block remote code execution.
+- **Friendly Status**
+  Popup displays last and next cleanup using human-friendly relative time.
 
 ---
 
