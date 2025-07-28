@@ -14,6 +14,12 @@ cleanNowBtn.addEventListener('click', () => {
   cleanNowBtn.textContent = 'Lösche...';
   
   chrome.runtime.sendMessage({action: 'clearNow'}, (response) => {
+    if (chrome.runtime.lastError) {
+      console.error('Fehler beim Senden der Nachricht:', chrome.runtime.lastError);
+      cleanNowBtn.disabled = false;
+      cleanNowBtn.textContent = 'Jetzt löschen';
+      return;
+    }
     if (response && response.success) {
       successMessage.style.display = 'block';
       setTimeout(() => {
@@ -33,6 +39,10 @@ cleanNowBtn.addEventListener('click', () => {
 // Status aktualisieren
 function updateStatus() {
   chrome.runtime.sendMessage({action: 'getStatus'}, (response) => {
+    if (chrome.runtime.lastError) {
+      console.error('Fehler beim Abrufen des Status:', chrome.runtime.lastError);
+      return;
+    }
     if (response) {
       // Letzte Löschung formatieren
       const lastCleanDate = new Date(response.lastCleanTime);

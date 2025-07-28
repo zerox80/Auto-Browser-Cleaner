@@ -12,9 +12,13 @@ chrome.runtime.onInstalled.addListener(() => {
   });
   
   // Speichere den Installationszeitpunkt
-  chrome.storage.local.set({ 
+  chrome.storage.local.set({
     installTime: Date.now(),
     lastCleanTime: Date.now()
+  }, () => {
+    if (chrome.runtime.lastError) {
+      console.error('Fehler beim Speichern des Installationszeitpunkts:', chrome.runtime.lastError);
+    }
   });
 });
 
@@ -49,14 +53,26 @@ function clearAllBrowserData() {
     console.log('Browserdaten wurden gelöscht');
     
     // Aktualisiere die Zeit der letzten Löschung
-    chrome.storage.local.set({ 
+    chrome.storage.local.set({
       lastCleanTime: Date.now(),
       cleanCount: 0
     }, () => {
+      if (chrome.runtime.lastError) {
+        console.error('Fehler beim Aktualisieren der letzten Löschung:', chrome.runtime.lastError);
+        return;
+      }
       // Erhöhe den Zähler
       chrome.storage.local.get(['cleanCount'], (result) => {
+        if (chrome.runtime.lastError) {
+          console.error('Fehler beim Lesen des cleanCount:', chrome.runtime.lastError);
+          return;
+        }
         const count = (result.cleanCount || 0) + 1;
-        chrome.storage.local.set({ cleanCount: count });
+        chrome.storage.local.set({ cleanCount: count }, () => {
+          if (chrome.runtime.lastError) {
+            console.error('Fehler beim Speichern des cleanCount:', chrome.runtime.lastError);
+          }
+        });
       });
     });
   });
@@ -69,6 +85,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     sendResponse({success: true});
   } else if (request.action === 'getStatus') {
     chrome.storage.local.get(['lastCleanTime', 'cleanCount'], (result) => {
+      if (chrome.runtime.lastError) {
+        console.error('Fehler beim Abrufen des Status:', chrome.runtime.lastError);
+        sendResponse({
+          lastCleanTime: Date.now(),
+          cleanCount: 0
+        });
+        return;
+      }
       sendResponse({
         lastCleanTime: result.lastCleanTime || Date.now(),
         cleanCount: result.cleanCount || 0
