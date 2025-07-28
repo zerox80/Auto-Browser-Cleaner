@@ -50,6 +50,10 @@ function clearAllBrowserData() {
     "serviceWorkers": true,
     "webSQL": true
   }, () => {
+    if (chrome.runtime.lastError) {
+      console.error('Fehler beim Löschen der Browserdaten:', chrome.runtime.lastError);
+      return;
+    }
     console.log('Browserdaten wurden gelöscht');
     
     // Aktualisiere die Zeit der letzten Löschung
