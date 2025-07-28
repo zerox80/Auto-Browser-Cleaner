@@ -56,27 +56,20 @@ function clearAllBrowserData() {
     }
     console.log('Browserdaten wurden gelöscht');
     
-    // Aktualisiere die Zeit der letzten Löschung
-    chrome.storage.local.set({
-      lastCleanTime: Date.now(),
-      cleanCount: 0
-    }, () => {
+    // Aktualisiere die Zeit der letzten Löschung und erhöhe den Zähler
+    chrome.storage.local.get(['cleanCount'], (result) => {
       if (chrome.runtime.lastError) {
-        console.error('Fehler beim Aktualisieren der letzten Löschung:', chrome.runtime.lastError);
+        console.error('Fehler beim Lesen des cleanCount:', chrome.runtime.lastError);
         return;
       }
-      // Erhöhe den Zähler
-      chrome.storage.local.get(['cleanCount'], (result) => {
+      const count = (result.cleanCount || 0) + 1;
+      chrome.storage.local.set({
+        lastCleanTime: Date.now(),
+        cleanCount: count
+      }, () => {
         if (chrome.runtime.lastError) {
-          console.error('Fehler beim Lesen des cleanCount:', chrome.runtime.lastError);
-          return;
+          console.error('Fehler beim Aktualisieren der letzten Löschung:', chrome.runtime.lastError);
         }
-        const count = (result.cleanCount || 0) + 1;
-        chrome.storage.local.set({ cleanCount: count }, () => {
-          if (chrome.runtime.lastError) {
-            console.error('Fehler beim Speichern des cleanCount:', chrome.runtime.lastError);
-          }
-        });
       });
     });
   });
