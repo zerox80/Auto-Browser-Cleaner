@@ -17,6 +17,8 @@
 
 - **Customizable**
   Easily tweak which data types to clear and the time range via `constants.js` and `background.js`.
+=======
+  Easily tweak which data types to clear and the cleanup interval in `background.js`.
 - **Security First**
   Built with a strict Content Security Policy to block remote code execution.
 - **Friendly Status**
@@ -68,6 +70,12 @@ To adjust what gets cleared or change the time window:
 
 1. Open `constants.js` to modify the cleaning interval.
 2. Open `background.js` to change the data types being removed.
+=======
+1. Open `background.js`.
+
+2. Modify the `FOUR_DAYS_MS` constant near the top to change how often
+   automatic cleanup runs. The value is in milliseconds (default is four days).
+
 3. Locate the `chrome.browsingData.remove` call:
 
    ```javascript

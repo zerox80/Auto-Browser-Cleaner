@@ -5,6 +5,8 @@ importScripts('constants.js');
 
 // Konstanten für die Zeitabstände
 const VIER_TAGE_IN_MINUTEN = FOUR_DAYS_MS / (60 * 1000); // 5760 Minuten
+const FOUR_DAYS_MS = 4 * 24 * 60 * 60 * 1000;
+const FOUR_DAYS_MINUTES = FOUR_DAYS_MS / (60 * 1000);
 const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 
 // Beim Installieren der Extension
@@ -13,8 +15,8 @@ chrome.runtime.onInstalled.addListener(() => {
   
   // Erstelle einen wiederkehrenden Alarm
   chrome.alarms.create('clearBrowserData', {
-    periodInMinutes: VIER_TAGE_IN_MINUTEN,
-    delayInMinutes: VIER_TAGE_IN_MINUTEN
+    periodInMinutes: FOUR_DAYS_MINUTES,
+    delayInMinutes: FOUR_DAYS_MINUTES
   });
   
   // Speichere den Installationszeitpunkt
@@ -24,6 +26,23 @@ chrome.runtime.onInstalled.addListener(() => {
   }, () => {
     if (chrome.runtime.lastError) {
       console.error('Fehler beim Speichern des Installationszeitpunkts:', chrome.runtime.lastError);
+    }
+  });
+});
+
+// Beim Start des Browsers
+chrome.runtime.onStartup.addListener(() => {
+  chrome.storage.local.get(['lastCleanTime'], (result) => {
+    if (chrome.runtime.lastError) {
+      console.error('Fehler beim Lesen von lastCleanTime:', chrome.runtime.lastError);
+      return;
+    }
+
+    const lastClean = result.lastCleanTime || 0;
+    if (Date.now() - lastClean > FOUR_DAYS_MS) {
+      clearAllBrowserData().catch((err) => {
+        console.error('Fehler beim Bereinigen beim Start:', err);
+      });
     }
   });
 });
@@ -102,6 +121,10 @@ async function clearAllBrowserData() {
 
 // Manuelles Löschen über Nachricht vom Popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (sender.id !== chrome.runtime.id) {
+    console.warn('Unerlaubte Nachricht von', sender.id);
+    return;
+  }
   if (request.action === 'clearNow') {
     clearAllBrowserData()
       .then(() => {
