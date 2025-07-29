@@ -1,5 +1,20 @@
 "use strict";
 
+// Konstanten für die Zeitabstände
+const VIER_TAGE_IN_MINUTEN = 4 * 24 * 60; // 5760 Minuten
+const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
+const FOUR_DAYS_MS = VIER_TAGE_IN_MINUTEN * 60 * 1000;
+
+// Einfache konfigurierbare Logging-Funktion
+const DEBUG_LOGGING = false;
+const log = (...args) => {
+  if (DEBUG_LOGGING) {
+    console.debug(...args);
+  }
+};
+
+"use strict";
+
 // Shared constants
 importScripts('constants.js');
 
@@ -11,7 +26,7 @@ const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 
 // Beim Installieren der Extension
 chrome.runtime.onInstalled.addListener(() => {
-  console.log('Auto Browser Cleaner installiert');
+  log('Auto Browser Cleaner installiert');
   
   // Erstelle einen wiederkehrenden Alarm
   chrome.alarms.create('clearBrowserData', {
@@ -68,6 +83,68 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 });
 
 // Funktion zum Löschen der Browserdaten
+async function clearAllBrowserData() {
+  const defaultSince = Date.now() - ONE_YEAR_MS;
+  const { lastCleanTime = 0, cleanCount = 0 } = await new Promise((resolve) => {
+    chrome.storage.local.get(['lastCleanTime', 'cleanCount'], (result) => {
+      if (chrome.runtime.lastError) {
+        console.error('Fehler beim Lesen von lastCleanTime/cleanCount:', chrome.runtime.lastError);
+        resolve({ lastCleanTime: 0, cleanCount: 0 });
+        return;
+      }
+      resolve(result);
+    });
+  });
+
+  const since = Math.max(lastCleanTime, defaultSince);
+
+  await new Promise((resolve, reject) => {
+    chrome.browsingData.remove(
+      { since },
+      {
+        appcache: true,
+        cache: true,
+        cacheStorage: true,
+        cookies: true,
+        downloads: false, // Downloads behalten
+        fileSystems: true,
+        formData: true,
+        history: true,
+        indexedDB: true,
+        localStorage: true,
+        passwords: false, // Passwörter behalten
+        serviceWorkers: true,
+        webSQL: true
+      },
+      () => {
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+          return;
+        }
+        resolve();
+      }
+    );
+  });
+
+  log('Browserdaten wurden gelöscht');
+
+  await new Promise((resolve, reject) => {
+    chrome.storage.local.set(
+      {
+        lastCleanTime: Date.now(),
+        cleanCount: cleanCount + 1
+      },
+      () => {
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+          return;
+        }
+        resolve();
+      }
+    );
+  });
+}
+=======
 async function clearAllBrowserData() {
   const defaultSince = Date.now() - ONE_YEAR_MS;
   const { lastCleanTime = 0, cleanCount = 0 } = await new Promise((resolve) => {
