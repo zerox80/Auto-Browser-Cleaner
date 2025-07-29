@@ -27,11 +27,13 @@ chrome.runtime.onInstalled.addListener(() => {
 });
 
 // Wenn der Alarm ausgelöst wird
-chrome.alarms.onAlarm.addListener((alarm) => {
+chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name === 'clearBrowserData') {
-    clearAllBrowserData().catch((err) => {
+    try {
+      await clearAllBrowserData();
+    } catch (err) {
       console.error('Fehler beim periodischen Löschen:', err);
-    });
+    }
   }
 });
 
