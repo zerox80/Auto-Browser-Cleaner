@@ -66,7 +66,8 @@
 
 To adjust what gets cleared or change the time window:
 
-1. Open `constants.js` to modify the cleaning interval.
+1. Open `constants.js` to modify the cleaning interval. The constants are shared
+   between the background script and popup, so changes apply everywhere.
 2. Open `background.js` to change the data types being removed.
 
 ---
