@@ -1,6 +1,10 @@
 "use strict";
 
+// Shared constants
+importScripts('constants.js');
+
 // Konstanten für die Zeitabstände
+const VIER_TAGE_IN_MINUTEN = FOUR_DAYS_MS / (60 * 1000); // 5760 Minuten
 const FOUR_DAYS_MS = 4 * 24 * 60 * 60 * 1000;
 const FOUR_DAYS_MINUTES = FOUR_DAYS_MS / (60 * 1000);
 const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
