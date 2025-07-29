@@ -16,9 +16,7 @@
   Works out of the box—no settings required.  
 
 - **Customizable**
-  Easily tweak which data types to clear and the time range via `constants.js` and `background.js`.
-=======
-  Easily tweak which data types to clear and the cleanup interval in `background.js`.
+  Easily tweak which data types to clear and adjust the cleanup interval in `background.js` and `constants.js`.
 - **Security First**
   Built with a strict Content Security Policy to block remote code execution.
 - **Friendly Status**
@@ -70,32 +68,6 @@ To adjust what gets cleared or change the time window:
 
 1. Open `constants.js` to modify the cleaning interval.
 2. Open `background.js` to change the data types being removed.
-=======
-1. Open `background.js`.
-
-2. Modify the `FOUR_DAYS_MS` constant near the top to change how often
-   automatic cleanup runs. The value is in milliseconds (default is four days).
-
-3. Locate the `chrome.browsingData.remove` call:
-
-   ```javascript
-  chrome.browsingData.remove(
-    { since: lastCleanTime || Date.now() - 365*24*60*60*1000 }, // since last clean or max 1 year
-     {
-       history:   true,
-       cache:     true,
-       cookies:   true,
-       downloads: true
-     }
-   );
-   ```
-
-- `since`: timestamp in milliseconds
-  *(e.g. `Date.now() - 24*60*60*1000` for the last 24 hours; default is the last run or one year)*
-
-- Toggle any data type by setting its boolean to `false`.
-
-4. Save your changes and reload the extension at `chrome://extensions`.
 
 ---
 
