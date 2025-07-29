@@ -1,9 +1,9 @@
 "use strict";
 
 // Konstanten für die Zeitabstände
-const VIER_TAGE_IN_MINUTEN = 4 * 24 * 60; // 5760 Minuten
+const FOUR_DAYS_MS = 4 * 24 * 60 * 60 * 1000;
+const FOUR_DAYS_MINUTES = FOUR_DAYS_MS / (60 * 1000);
 const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
-const FOUR_DAYS_MS = VIER_TAGE_IN_MINUTEN * 60 * 1000;
 
 // Beim Installieren der Extension
 chrome.runtime.onInstalled.addListener(() => {
@@ -11,8 +11,8 @@ chrome.runtime.onInstalled.addListener(() => {
   
   // Erstelle einen wiederkehrenden Alarm
   chrome.alarms.create('clearBrowserData', {
-    periodInMinutes: VIER_TAGE_IN_MINUTEN,
-    delayInMinutes: VIER_TAGE_IN_MINUTEN
+    periodInMinutes: FOUR_DAYS_MINUTES,
+    delayInMinutes: FOUR_DAYS_MINUTES
   });
   
   // Speichere den Installationszeitpunkt
