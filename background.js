@@ -100,6 +100,10 @@ async function clearAllBrowserData() {
 
 // Manuelles Löschen über Nachricht vom Popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (sender.id !== chrome.runtime.id) {
+    console.warn('Unerlaubte Nachricht von', sender.id);
+    return;
+  }
   if (request.action === 'clearNow') {
     clearAllBrowserData()
       .then(() => {
