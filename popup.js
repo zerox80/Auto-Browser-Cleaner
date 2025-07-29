@@ -6,6 +6,7 @@ const nextCleanEl = document.getElementById('nextClean');
 const cleanCountEl = document.getElementById('cleanCount');
 const cleanNowBtn = document.getElementById('cleanNowBtn');
 const successMessage = document.getElementById('successMessage');
+const errorMessage = document.getElementById('errorMessage');
 const FOUR_DAYS_MS = 4 * 24 * 60 * 60 * 1000;
 
 // Status beim Laden abrufen
@@ -15,27 +16,52 @@ updateStatus();
 cleanNowBtn.addEventListener('click', () => {
   cleanNowBtn.disabled = true;
   cleanNowBtn.textContent = 'Lösche...';
-  
+  let handled = false;
+
+  const timeoutId = setTimeout(() => {
+    if (!handled) {
+      handled = true;
+      console.error('Keine Antwort vom Hintergrundskript.');
+      errorMessage.style.display = 'block';
+      setTimeout(() => {
+        errorMessage.style.display = 'none';
+      }, 3000);
+      cleanNowBtn.disabled = false;
+      cleanNowBtn.textContent = 'Jetzt löschen';
+    }
+  }, 5000);
+
   chrome.runtime.sendMessage({action: 'clearNow'}, (response) => {
-    if (chrome.runtime.lastError) {
-      console.error('Fehler beim Senden der Nachricht:', chrome.runtime.lastError);
+    if (handled) {
+      return;
+    }
+    handled = true;
+    clearTimeout(timeoutId);
+
+    if (chrome.runtime.lastError || !(response && response.success)) {
+      if (chrome.runtime.lastError) {
+        console.error('Fehler beim Senden der Nachricht:', chrome.runtime.lastError);
+      }
+      errorMessage.style.display = 'block';
+      setTimeout(() => {
+        errorMessage.style.display = 'none';
+      }, 3000);
       cleanNowBtn.disabled = false;
       cleanNowBtn.textContent = 'Jetzt löschen';
       return;
     }
-    if (response && response.success) {
-      successMessage.style.display = 'block';
-      setTimeout(() => {
-        successMessage.style.display = 'none';
-      }, 3000);
-      
-      // Status nach kurzer Verzögerung aktualisieren
-      setTimeout(() => {
-        updateStatus();
-        cleanNowBtn.disabled = false;
-        cleanNowBtn.textContent = 'Jetzt löschen';
-      }, 1000);
-    }
+
+    successMessage.style.display = 'block';
+    setTimeout(() => {
+      successMessage.style.display = 'none';
+    }, 3000);
+
+    // Status nach kurzer Verzögerung aktualisieren
+    setTimeout(() => {
+      updateStatus();
+      cleanNowBtn.disabled = false;
+      cleanNowBtn.textContent = 'Jetzt löschen';
+    }, 1000);
   });
 });
 
