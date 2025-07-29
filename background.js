@@ -1,9 +1,11 @@
 "use strict";
 
+// Shared constants
+importScripts('constants.js');
+
 // Konstanten für die Zeitabstände
-const VIER_TAGE_IN_MINUTEN = 4 * 24 * 60; // 5760 Minuten
+const VIER_TAGE_IN_MINUTEN = FOUR_DAYS_MS / (60 * 1000); // 5760 Minuten
 const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
-const FOUR_DAYS_MS = VIER_TAGE_IN_MINUTEN * 60 * 1000;
 
 // Beim Installieren der Extension
 chrome.runtime.onInstalled.addListener(() => {
