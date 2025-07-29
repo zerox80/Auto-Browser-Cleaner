@@ -7,7 +7,6 @@ const cleanCountEl = document.getElementById('cleanCount');
 const cleanNowBtn = document.getElementById('cleanNowBtn');
 const successMessage = document.getElementById('successMessage');
 const errorMessage = document.getElementById('errorMessage');
-const FOUR_DAYS_MS = 4 * 24 * 60 * 60 * 1000;
 
 // Status beim Laden abrufen
 updateStatus();
