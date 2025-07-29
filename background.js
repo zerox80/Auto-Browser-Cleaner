@@ -85,21 +85,7 @@ async function clearAllBrowserData() {
   await new Promise((resolve, reject) => {
     chrome.browsingData.remove(
       { since },
-      {
-        appcache: true,
-        cache: true,
-        cacheStorage: true,
-        cookies: true,
-        downloads: false, // Downloads behalten
-        fileSystems: true,
-        formData: true,
-        history: true,
-        indexedDB: true,
-        localStorage: true,
-        passwords: false, // Passwörter behalten
-        serviceWorkers: true,
-        webSQL: true
-      },
+      CLEAR_DATA_TYPES,
       () => {
         if (chrome.runtime.lastError) {
           reject(chrome.runtime.lastError);

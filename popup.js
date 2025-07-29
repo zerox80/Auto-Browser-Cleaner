@@ -7,6 +7,7 @@ const cleanCountEl = document.getElementById('cleanCount');
 const cleanNowBtn = document.getElementById('cleanNowBtn');
 const successMessage = document.getElementById('successMessage');
 const errorMessage = document.getElementById('errorMessage');
+=======
 // FOUR_DAYS_MS is defined in constants.js and available globally
 
 // Status beim Laden abrufen
