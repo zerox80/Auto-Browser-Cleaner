@@ -5,9 +5,17 @@ const VIER_TAGE_IN_MINUTEN = 4 * 24 * 60; // 5760 Minuten
 const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 const FOUR_DAYS_MS = VIER_TAGE_IN_MINUTEN * 60 * 1000;
 
+// Einfache konfigurierbare Logging-Funktion
+const DEBUG_LOGGING = false;
+const log = (...args) => {
+  if (DEBUG_LOGGING) {
+    console.debug(...args);
+  }
+};
+
 // Beim Installieren der Extension
 chrome.runtime.onInstalled.addListener(() => {
-  console.log('Auto Browser Cleaner installiert');
+  log('Auto Browser Cleaner installiert');
   
   // Erstelle einen wiederkehrenden Alarm
   chrome.alarms.create('clearBrowserData', {
@@ -79,7 +87,7 @@ async function clearAllBrowserData() {
     );
   });
 
-  console.log('Browserdaten wurden gelöscht');
+  log('Browserdaten wurden gelöscht');
 
   await new Promise((resolve, reject) => {
     chrome.storage.local.set(
