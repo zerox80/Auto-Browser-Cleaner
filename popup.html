@@ -88,13 +88,27 @@
       margin-bottom: 15px;
       display: none;
     }
+
+    .error-message {
+      color: #a94442;
+      background-color: #f8d7da;
+      padding: 10px;
+      border-radius: 6px;
+      text-align: center;
+      margin-bottom: 15px;
+      display: none;
+    }
   </style>
 </head>
 <body>
   <h1>🧹 Auto Browser Cleaner</h1>
-  
+
   <div class="success-message" id="successMessage">
     ✓ Browserdaten wurden gelöscht!
+  </div>
+
+  <div class="error-message" id="errorMessage">
+    ⚠️ Fehler beim Löschen der Browserdaten.
   </div>
   
   <div class="status-box">
@@ -120,6 +134,7 @@
     Automatische Löschung alle 4 Tage aktiv
   </p>
   
+  <script src="constants.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>
