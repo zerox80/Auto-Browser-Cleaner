@@ -30,6 +30,17 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
+// Wenn der Alarm ausgelöst wird
+chrome.alarms.onAlarm.addListener(async (alarm) => {
+  if (alarm.name === 'clearBrowserData') {
+    try {
+      await clearAllBrowserData();
+    } catch (err) {
+      console.error('Fehler beim periodischen Löschen:', err);
+    }
+  }
+});
+
 // Beim Start des Browsers
 chrome.runtime.onStartup.addListener(() => {
   chrome.storage.local.get(['lastCleanTime'], (result) => {
