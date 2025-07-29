@@ -66,8 +66,9 @@
 
 To adjust what gets cleared or change the time window:
 
-1. Open `constants.js` to modify the cleaning interval.
-2. Open `background.js` to change the data types being removed.
+1. Open `constants.js` to modify the cleaning interval (`FOUR_DAYS_MS`).
+2. Edit the `CLEAR_DATA_TYPES` object in `constants.js` to control which data
+   categories will be removed when the cleanup runs.
 
 ---
 
