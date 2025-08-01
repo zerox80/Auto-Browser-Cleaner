@@ -1,117 +1,79 @@
 "use strict";
 
 // Elemente abrufen
-const lastCleanEl = document.getElementById('lastClean');
-const nextCleanEl = document.getElementById('nextClean');
-const cleanCountEl = document.getElementById('cleanCount');
-const cleanNowBtn = document.getElementById('cleanNowBtn');
-const successMessage = document.getElementById('successMessage');
-const errorMessage = document.getElementById('errorMessage');
-// FOUR_DAYS_MS is defined in constants.js and available globally
+const lastCleanEl   = document.getElementById('lastClean');
+const nextCleanEl   = document.getElementById('nextClean');
+const cleanCountEl  = document.getElementById('cleanCount');
+const cleanNowBtn   = document.getElementById('cleanNowBtn');
+const successMessage= document.getElementById('successMessage');
+const errorMessage  = document.getElementById('errorMessage');
 
-// Status beim Laden abrufen
-updateStatus();
+// Lädt den aktuellen Status aus chrome.storage und updatet das UI
+async function updateStatus() {
+  const data = await new Promise(resolve => {
+    chrome.storage.local.get(
+      ['lastCleanTime', 'cleanCount'],
+      resolve
+    );
+  });
 
-// Button Event Listener
+  const { lastCleanTime = 0, cleanCount = 0 } = data;
+
+  // Anzahl updaten
+  cleanCountEl.textContent = cleanCount;
+
+  // Wenn es noch keinen Vorgang gab, belassen wir die "unbekannt"-Anzeige
+  if (lastCleanTime > 0) {
+    const lastDate = new Date(lastCleanTime);
+    lastCleanEl.textContent = lastDate.toLocaleString();
+
+    // Nächste Löschung = lastCleanTime + Intervall
+    const nextTime = lastCleanTime + FOUR_DAYS_MS;
+    const now = Date.now();
+
+    // relative Anzeige: „in x Tagen“ oder „vor x Tagen“
+    const diff = nextTime - now;
+    nextCleanEl.textContent = formatRelative(diff);
+  }
+}
+
+// Relativzeit-Formatter (nur deutsch, grobe Einheiten)
+function formatRelative(diffMs) {
+  const rtf = new Intl.RelativeTimeFormat('de', { numeric: 'auto' });
+  const diffSec = Math.round(diffMs / 1000);
+  const absSec  = Math.abs(diffSec);
+
+  if (absSec >= 86400) {
+    return rtf.format(Math.round(diffSec / 86400), 'day');
+  } else if (absSec >= 3600) {
+    return rtf.format(Math.round(diffSec / 3600), 'hour');
+  } else if (absSec >= 60) {
+    return rtf.format(Math.round(diffSec / 60), 'minute');
+  } else {
+    return rtf.format(diffSec, 'second');
+  }
+}
+
+// Klick auf „Jetzt löschen“
 cleanNowBtn.addEventListener('click', () => {
   cleanNowBtn.disabled = true;
-  cleanNowBtn.textContent = 'Lösche...';
-  let handled = false;
+  successMessage.style.display = 'none';
+  errorMessage.style.display   = 'none';
 
-  const timeoutId = setTimeout(() => {
-    if (!handled) {
-      handled = true;
-      console.error('Keine Antwort vom Hintergrundskript.');
-      errorMessage.style.display = 'block';
-      setTimeout(() => {
-        errorMessage.style.display = 'none';
-      }, 3000);
+  chrome.runtime.sendMessage(
+    { action: 'clearNow' },
+    response => {
       cleanNowBtn.disabled = false;
-      cleanNowBtn.textContent = 'Jetzt löschen';
-    }
-  }, 5000);
-
-  chrome.runtime.sendMessage({action: 'clearNow'}, (response) => {
-    if (handled) {
-      return;
-    }
-    handled = true;
-    clearTimeout(timeoutId);
-
-    if (chrome.runtime.lastError || !(response && response.success)) {
-      if (chrome.runtime.lastError) {
-        console.error('Fehler beim Senden der Nachricht:', chrome.runtime.lastError);
+      if (response?.success) {
+        successMessage.style.display = 'block';
+        // Status neu laden
+        updateStatus();
+      } else {
+        errorMessage.style.display = 'block';
       }
-      errorMessage.style.display = 'block';
-      setTimeout(() => {
-        errorMessage.style.display = 'none';
-      }, 3000);
-      cleanNowBtn.disabled = false;
-      cleanNowBtn.textContent = 'Jetzt löschen';
-      return;
     }
-
-    successMessage.style.display = 'block';
-    setTimeout(() => {
-      successMessage.style.display = 'none';
-    }, 3000);
-
-    // Status nach kurzer Verzögerung aktualisieren
-    setTimeout(() => {
-      updateStatus();
-      cleanNowBtn.disabled = false;
-      cleanNowBtn.textContent = 'Jetzt löschen';
-    }, 1000);
-  });
+  );
 });
 
-// Status aktualisieren
-function updateStatus() {
-  chrome.runtime.sendMessage({action: 'getStatus'}, (response) => {
-    if (chrome.runtime.lastError) {
-      console.error('Fehler beim Abrufen des Status:', chrome.runtime.lastError);
-      lastCleanEl.textContent = 'unbekannt';
-      nextCleanEl.textContent = 'unbekannt';
-      cleanCountEl.textContent = '0';
-      return;
-    }
-    if (response) {
-      // Letzte Löschung formatieren
-      const lastCleanDate = new Date(response.lastCleanTime);
-      lastCleanEl.textContent = formatDate(lastCleanDate);
-      
-      // Nächste Löschung berechnen
-      const nextCleanDate = new Date(response.lastCleanTime + FOUR_DAYS_MS);
-      nextCleanEl.textContent = formatDate(nextCleanDate);
-      
-      // Anzahl anzeigen
-      cleanCountEl.textContent = response.cleanCount || 0;
-    }
-  });
-}
-
-// Datum formatieren
-const rtf = new Intl.RelativeTimeFormat('de', { numeric: 'auto' });
-
-function formatDate(date) {
-  const diffSec = Math.round((date.getTime() - Date.now()) / 1000);
-  const absSec = Math.abs(diffSec);
-
-  let value;
-  let unit;
-  if (absSec >= 86400) {
-    value = Math.round(diffSec / 86400);
-    unit = 'day';
-  } else if (absSec >= 3600) {
-    value = Math.round(diffSec / 3600);
-    unit = 'hour';
-  } else if (absSec >= 60) {
-    value = Math.round(diffSec / 60);
-    unit = 'minute';
-  } else {
-    value = diffSec;
-    unit = 'second';
-  }
-
-  return rtf.format(value, unit);
-}
+// Direkt beim Laden den Status anzeigen
+updateStatus();
