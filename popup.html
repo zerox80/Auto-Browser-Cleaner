@@ -10,130 +10,62 @@
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background-color: #f5f5f5;
     }
-    
     h1 {
       font-size: 20px;
       margin: 0 0 20px 0;
-      color: #333;
-      text-align: center;
     }
-    
-    .status-box {
-      background: white;
-      border-radius: 8px;
+    .status {
+      background: #fff;
       padding: 15px;
-      margin-bottom: 15px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
-    
-    .status-item {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 10px;
+    .status div {
+      margin-bottom: 8px;
       font-size: 14px;
     }
-    
-    .status-item:last-child {
-      margin-bottom: 0;
-    }
-    
-    .label {
-      color: #666;
-    }
-    
-    .value {
-      font-weight: 500;
-      color: #333;
-    }
-    
     .clean-button {
       width: 100%;
       padding: 12px;
-      background-color: #4285f4;
-      color: white;
+      background-color: #006aff;
+      color: #fff;
       border: none;
       border-radius: 6px;
       font-size: 16px;
-      font-weight: 500;
       cursor: pointer;
-      transition: background-color 0.2s;
     }
-    
-    .clean-button:hover {
-      background-color: #357ae8;
-    }
-    
-    .clean-button:active {
-      background-color: #2968d6;
-    }
-    
     .clean-button:disabled {
-      background-color: #ccc;
-      cursor: not-allowed;
+      opacity: 0.6;
+      cursor: default;
     }
-    
+    .message {
+      margin-top: 10px;
+      font-size: 13px;
+      display: none;
+    }
+    .message.success { color: green; }
+    .message.error   { color: red; }
     .info-text {
-      text-align: center;
+      margin-top: 12px;
       font-size: 12px;
-      color: #666;
-      margin-top: 15px;
-    }
-    
-    .success-message {
-      color: #0d8043;
-      background-color: #ceead6;
-      padding: 10px;
-      border-radius: 6px;
+      color: #555;
       text-align: center;
-      margin-bottom: 15px;
-      display: none;
-    }
-
-    .error-message {
-      color: #a94442;
-      background-color: #f8d7da;
-      padding: 10px;
-      border-radius: 6px;
-      text-align: center;
-      margin-bottom: 15px;
-      display: none;
     }
   </style>
 </head>
 <body>
   <h1>🧹 Auto Browser Cleaner</h1>
+  <div class="status">
+    <div>Letzte Löschung: <strong><span id="lastClean">unbekannt</span></strong></div>
+    <div>Nächste Löschung: <strong><span id="nextClean">unbekannt</span></strong></div>
+    <div>Anzahl Löschungen: <strong><span id="cleanCount">0</span></strong></div>
+  </div>
+  <button class="clean-button" id="cleanNowBtn">Jetzt löschen</button>
+  <p class="message success" id="successMessage">Erfolgreich gelöscht!</p>
+  <p class="message error"   id="errorMessage">Fehler beim Löschen.</p>
+  <p class="info-text">Automatische Löschung alle 4 Tage aktiv</p>
 
-  <div class="success-message" id="successMessage">
-    ✓ Browserdaten wurden gelöscht!
-  </div>
-
-  <div class="error-message" id="errorMessage">
-    ⚠️ Fehler beim Löschen der Browserdaten.
-  </div>
-  
-  <div class="status-box">
-    <div class="status-item">
-      <span class="label">Letzte Löschung:</span>
-      <span class="value" id="lastClean">Lade...</span>
-    </div>
-    <div class="status-item">
-      <span class="label">Nächste Löschung:</span>
-      <span class="value" id="nextClean">Lade...</span>
-    </div>
-    <div class="status-item">
-      <span class="label">Anzahl Löschungen:</span>
-      <span class="value" id="cleanCount">0</span>
-    </div>
-  </div>
-  
-  <button class="clean-button" id="cleanNowBtn">
-    Jetzt löschen
-  </button>
-  
-  <p class="info-text">
-    Automatische Löschung alle 4 Tage aktiv
-  </p>
-  
   <script src="constants.js"></script>
   <script src="popup.js"></script>
 </body>
