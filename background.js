@@ -15,88 +15,37 @@ const log = (...args) => {
   }
 };
 
-// Beim Installieren der Extension
-chrome.runtime.onInstalled.addListener(() => {
-  log('Auto Browser Cleaner installiert');
-  
-  // Erstelle einen wiederkehrenden Alarm
-  chrome.alarms.create('clearBrowserData', {
-    periodInMinutes: FOUR_DAYS_MINUTES,
-    delayInMinutes: FOUR_DAYS_MINUTES
-  });
-  
-  // Speichere den Installationszeitpunkt
-  chrome.storage.local.set({
-    installTime: Date.now(),
-    lastCleanTime: Date.now()
-  }, () => {
-    if (chrome.runtime.lastError) {
-      console.error('Fehler beim Speichern des Installationszeitpunkts:', chrome.runtime.lastError);
-    }
-  });
-});
-
-// Wenn der Alarm ausgelöst wird
-chrome.alarms.onAlarm.addListener(async (alarm) => {
-  if (alarm.name === 'clearBrowserData') {
-    try {
-      await clearAllBrowserData();
-    } catch (err) {
-      console.error('Fehler beim periodischen Löschen:', err);
-    }
-  }
-});
-
-// Beim Start des Browsers
-chrome.runtime.onStartup.addListener(() => {
-  chrome.storage.local.get(['lastCleanTime'], (result) => {
-    if (chrome.runtime.lastError) {
-      console.error('Fehler beim Lesen von lastCleanTime:', chrome.runtime.lastError);
-      return;
-    }
-
-    const lastClean = result.lastCleanTime || 0;
-    if (Date.now() - lastClean > FOUR_DAYS_MS) {
-      clearAllBrowserData().catch((err) => {
-        console.error('Fehler beim Bereinigen beim Start:', err);
-      });
-    }
-  });
-});
-
-// Wenn der Alarm ausgelöst wird
-
-// Funktion zum Löschen der Browserdaten
-async function clearAllBrowserData() {
+/**
+ * Clears browsing data.
+ * @param {boolean} forceAllTime If true, clears data for all time; otherwise uses lastCleanTime or ONE_YEAR_MS.
+ */
+async function clearAllBrowserData(forceAllTime = false) {
   const defaultSince = Date.now() - ONE_YEAR_MS;
+  // Retrieve last clean time and count
   const { lastCleanTime = 0, cleanCount = 0 } = await new Promise((resolve) => {
-    chrome.storage.local.get(['lastCleanTime', 'cleanCount'], (result) => {
-      if (chrome.runtime.lastError) {
-        console.error('Fehler beim Lesen von lastCleanTime/cleanCount:', chrome.runtime.lastError);
-        resolve({ lastCleanTime: 0, cleanCount: 0 });
-        return;
-      }
-      resolve(result);
-    });
+    chrome.storage.local.get(['lastCleanTime', 'cleanCount'], resolve);
   });
 
-  const since = Math.max(lastCleanTime, defaultSince);
+  // Determine the 'since' option
+  const since = forceAllTime ? 0 : Math.max(lastCleanTime, defaultSince);
+  const removeOptions = since > 0 ? { since } : {};
 
+  // Remove browsing data
   await new Promise((resolve, reject) => {
     chrome.browsingData.remove(
-      { since },
+      removeOptions,
       {
         appcache: true,
         cache: true,
         cacheStorage: true,
         cookies: true,
-        downloads: false, // Downloads behalten
+        downloads: false,
         fileSystems: true,
         formData: true,
         history: true,
         indexedDB: true,
         localStorage: true,
-        passwords: false, // Passwörter behalten
+        passwords: false,
         serviceWorkers: true,
         webSQL: true
       },
@@ -110,56 +59,34 @@ async function clearAllBrowserData() {
     );
   });
 
-  log('Browserdaten wurden gelöscht');
-
-  await new Promise((resolve, reject) => {
+  // Update storage with new timestamp and count
+  await new Promise((resolve) => {
     chrome.storage.local.set(
       {
         lastCleanTime: Date.now(),
         cleanCount: cleanCount + 1
       },
-      () => {
-        if (chrome.runtime.lastError) {
-          reject(chrome.runtime.lastError);
-          return;
-        }
-        resolve();
-      }
+      resolve
     );
   });
 
+  log('Browsing data cleared', { since, newCount: cleanCount + 1 });
 }
 
-// Manuelles Löschen über Nachricht vom Popup
+// Listen for messages (e.g., from popup)
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (sender.id !== chrome.runtime.id) {
     console.warn('Unerlaubte Nachricht von', sender.id);
     return;
   }
   if (request.action === 'clearNow') {
-    clearAllBrowserData()
-      .then(() => {
-        sendResponse({ success: true });
-      })
-      .catch(() => {
+    // Force full-time clear when manually requested
+    clearAllBrowserData(true)
+      .then(() => sendResponse({ success: true }))
+      .catch((error) => {
+        console.error('Fehler beim Löschen der Browserdaten:', error);
         sendResponse({ success: false });
       });
-    return true; // Asynchrone Antwort
-  } else if (request.action === 'getStatus') {
-    chrome.storage.local.get(['lastCleanTime', 'cleanCount'], (result) => {
-      if (chrome.runtime.lastError) {
-        console.error('Fehler beim Abrufen des Status:', chrome.runtime.lastError);
-        sendResponse({
-          lastCleanTime: Date.now(),
-          cleanCount: 0
-        });
-        return;
-      }
-      sendResponse({
-        lastCleanTime: result.lastCleanTime || Date.now(),
-        cleanCount: result.cleanCount || 0
-      });
-    });
     return true; // Asynchrone Antwort
   }
 });
