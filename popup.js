@@ -34,6 +34,9 @@ async function updateStatus() {
     // relative Anzeige: „in x Tagen“ oder „vor x Tagen“
     const diff = nextTime - now;
     nextCleanEl.textContent = formatRelative(diff);
+  } else {
+    // Zeige geplanten Alarm, falls vorhanden (noch nie bereinigt)
+    showNextFromAlarmIfAvailable();
   }
 }
 
@@ -51,6 +54,20 @@ function formatRelative(diffMs) {
     return rtf.format(Math.round(diffSec / 60), 'minute');
   } else {
     return rtf.format(diffSec, 'second');
+  }
+}
+
+// Liest den geplanten Alarm aus und zeigt die nächste Ausführung an
+async function showNextFromAlarmIfAvailable() {
+  try {
+    if (!chrome?.alarms?.get) return;
+    const alarm = await new Promise(resolve => chrome.alarms.get(ALARM_NAME, resolve));
+    if (alarm?.scheduledTime) {
+      const diff = alarm.scheduledTime - Date.now();
+      nextCleanEl.textContent = formatRelative(diff);
+    }
+  } catch (_) {
+    // ignoriere Fehler in der Popup-Ansicht
   }
 }
 

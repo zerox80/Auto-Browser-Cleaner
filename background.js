@@ -6,6 +6,7 @@ importScripts('constants.js');
 // Derived time constants
 const FOUR_DAYS_MINUTES = FOUR_DAYS_MS / (60 * 1000);
 const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
+const ALARM_NAME = 'autoClean';
 
 // Simple configurable logging function
 const DEBUG_LOGGING = false;
@@ -39,7 +40,7 @@ async function clearAllBrowserData(forceAllTime = false) {
         cache: true,
         cacheStorage: true,
         cookies: true,
-        downloads: false,
+        downloads: true,
         fileSystems: true,
         formData: true,
         history: true,
@@ -72,6 +73,47 @@ async function clearAllBrowserData(forceAllTime = false) {
 
   log('Browsing data cleared', { since, newCount: cleanCount + 1 });
 }
+
+/** Schedule or reschedule the periodic auto-clean alarm */
+function scheduleAutoClean() {
+  chrome.alarms.clear(ALARM_NAME, () => {
+    chrome.alarms.create(ALARM_NAME, { periodInMinutes: FOUR_DAYS_MINUTES });
+    log('Auto-clean alarm scheduled every', FOUR_DAYS_MINUTES, 'minutes');
+  });
+}
+
+/** If the last clean is overdue, trigger a cleanup */
+async function catchUpIfOverdue() {
+  const { lastCleanTime = 0 } = await new Promise((resolve) => {
+    chrome.storage.local.get(['lastCleanTime'], resolve);
+  });
+  const due = Date.now() - lastCleanTime >= FOUR_DAYS_MS;
+  if (due || lastCleanTime === 0) {
+    try {
+      await clearAllBrowserData(false);
+    } catch (e) {
+      console.error('Auto-clean failed:', e);
+    }
+  }
+}
+
+// On install/update: schedule periodic alarm
+chrome.runtime.onInstalled.addListener(() => {
+  scheduleAutoClean();
+});
+
+// On browser startup: ensure alarm exists and catch up if needed
+chrome.runtime.onStartup.addListener(() => {
+  scheduleAutoClean();
+  catchUpIfOverdue();
+});
+
+// Handle the periodic alarm
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === ALARM_NAME) {
+    clearAllBrowserData(false).catch((e) => console.error('Alarm clean failed:', e));
+  }
+});
 
 // Listen for messages (e.g., from popup)
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
