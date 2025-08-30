@@ -4,17 +4,76 @@
 importScripts('constants.js');
 
 // Derived time constants
-const FOUR_DAYS_MINUTES = FOUR_DAYS_MS / (60 * 1000);
 const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
-const ALARM_NAME = 'autoClean';
 
-// Simple configurable logging function
-const DEBUG_LOGGING = false;
-const log = (...args) => {
-  if (DEBUG_LOGGING) {
-    console.debug(...args);
+// Helper to read the configured interval (in minutes) from storage
+async function getIntervalMinutes() {
+  const { [STORAGE_KEYS.intervalMinutes]: intervalMinutes } = await new Promise((resolve) => {
+    chrome.storage.local.get([STORAGE_KEYS.intervalMinutes], resolve);
+  });
+  return Number.isFinite(intervalMinutes) && intervalMinutes > 0
+    ? intervalMinutes
+    : DEFAULT_INTERVAL_MINUTES;
+}
+
+
+// Cross-browser removal helper with graceful fallback per data category
+async function removeWithFallback(removeOptions) {
+  // First try a single combined remove with a broad set
+  const combinedTypes = {
+    appcache: true,
+    cache: true,
+    cacheStorage: true,
+    cookies: true,
+    downloads: true,
+    fileSystems: true,
+    formData: true,
+    history: true,
+    indexedDB: true,
+    localStorage: true,
+    passwords: false,
+    serviceWorkers: true,
+    webSQL: true
+  };
+  try {
+    await new Promise((resolve, reject) => {
+      chrome.browsingData.remove(removeOptions, combinedTypes, () => {
+        if (chrome.runtime.lastError) return reject(chrome.runtime.lastError);
+        resolve();
+      });
+    });
+    return; // success
+  } catch (e) {
+    console.warn('[Cleaner] Combined remove failed; falling back per category', e);
   }
-};
+
+  // Fallback per category (only widely supported methods, guarded by existence)
+  const tasks = [
+    ['removeCache', 'cache'],
+    ['removeCookies', 'cookies'],
+    ['removeDownloads', 'downloads'],
+    ['removeFormData', 'formData'],
+    ['removeHistory', 'history'],
+    ['removeIndexedDB', 'indexedDB'],
+    ['removeLocalStorage', 'localStorage'],
+    ['removeServiceWorkers', 'serviceWorkers']
+  ];
+
+  for (const [method, label] of tasks) {
+    try {
+      const fn = chrome?.browsingData?.[method];
+      if (typeof fn !== 'function') continue;
+      await new Promise((resolve, reject) => {
+        fn.call(chrome.browsingData, removeOptions, () => {
+          if (chrome.runtime.lastError) return reject(chrome.runtime.lastError);
+          resolve();
+        });
+      });
+    } catch (e) {
+      console.warn(`[Cleaner] ${label} removal failed`, e);
+    }
+  }
+}
 
 /**
  * Clears browsing data.
@@ -31,34 +90,12 @@ async function clearAllBrowserData(forceAllTime = false) {
   const since = forceAllTime ? 0 : Math.max(lastCleanTime, defaultSince);
   const removeOptions = since > 0 ? { since } : {};
 
-  // Remove browsing data
-  await new Promise((resolve, reject) => {
-    chrome.browsingData.remove(
-      removeOptions,
-      {
-        appcache: true,
-        cache: true,
-        cacheStorage: true,
-        cookies: true,
-        downloads: true,
-        fileSystems: true,
-        formData: true,
-        history: true,
-        indexedDB: true,
-        localStorage: true,
-        passwords: false,
-        serviceWorkers: true,
-        webSQL: true
-      },
-      () => {
-        if (chrome.runtime.lastError) {
-          reject(chrome.runtime.lastError);
-          return;
-        }
-        resolve();
-      }
-    );
-  });
+  // Remove browsing data (with fallback strategy)
+  try {
+    await removeWithFallback(removeOptions);
+  } catch (err) {
+    throw err;
+  }
 
   // Update storage with new timestamp and count
   await new Promise((resolve) => {
@@ -71,14 +108,18 @@ async function clearAllBrowserData(forceAllTime = false) {
     );
   });
 
-  log('Browsing data cleared', { since, newCount: cleanCount + 1 });
+  console.info('[Cleaner] Browsing data cleared', { forceAllTime, since });
 }
 
 /** Schedule or reschedule the periodic auto-clean alarm */
-function scheduleAutoClean() {
+async function scheduleAutoClean() {
+  const minutes = await getIntervalMinutes();
   chrome.alarms.clear(ALARM_NAME, () => {
-    chrome.alarms.create(ALARM_NAME, { periodInMinutes: FOUR_DAYS_MINUTES });
-    log('Auto-clean alarm scheduled every', FOUR_DAYS_MINUTES, 'minutes');
+    chrome.alarms.create(ALARM_NAME, { periodInMinutes: minutes });
+    console.info('[Cleaner] Alarm scheduled/rescheduled', {
+      name: ALARM_NAME,
+      periodInMinutes: minutes
+    });
   });
 }
 
@@ -87,13 +128,17 @@ async function catchUpIfOverdue() {
   const { lastCleanTime = 0 } = await new Promise((resolve) => {
     chrome.storage.local.get(['lastCleanTime'], resolve);
   });
-  const due = Date.now() - lastCleanTime >= FOUR_DAYS_MS;
+  const minutes = await getIntervalMinutes();
+  const intervalMs = minutes * 60 * 1000;
+  const due = Date.now() - lastCleanTime >= intervalMs;
   if (due || lastCleanTime === 0) {
     try {
       await clearAllBrowserData(false);
     } catch (e) {
-      console.error('Auto-clean failed:', e);
+      console.warn('[Cleaner] Catch-up cleanup failed', e);
     }
+  } else {
+    // nothing to do
   }
 }
 
@@ -111,14 +156,24 @@ chrome.runtime.onStartup.addListener(() => {
 // Handle the periodic alarm
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === ALARM_NAME) {
-    clearAllBrowserData(false).catch((e) => console.error('Alarm clean failed:', e));
+    clearAllBrowserData(false)
+      .catch((e) => {
+        console.warn('[Cleaner] Periodic cleanup failed', e);
+      });
+  }
+});
+
+// Reschedule alarm if user changes interval in options
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== 'local') return;
+  if (changes[STORAGE_KEYS.intervalMinutes]) {
+    scheduleAutoClean();
   }
 });
 
 // Listen for messages (e.g., from popup)
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (sender.id !== chrome.runtime.id) {
-    console.warn('Unerlaubte Nachricht von', sender.id);
     return;
   }
   if (request.action === 'clearNow') {
@@ -126,7 +181,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     clearAllBrowserData(true)
       .then(() => sendResponse({ success: true }))
       .catch((error) => {
-        console.error('Fehler beim Löschen der Browserdaten:', error);
+        console.warn('[Cleaner] Manual cleanup failed', error);
         sendResponse({ success: false });
       });
     return true; // Asynchrone Antwort

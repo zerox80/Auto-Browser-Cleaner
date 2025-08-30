@@ -7,36 +7,54 @@ const cleanCountEl  = document.getElementById('cleanCount');
 const cleanNowBtn   = document.getElementById('cleanNowBtn');
 const successMessage= document.getElementById('successMessage');
 const errorMessage  = document.getElementById('errorMessage');
+const intervalLabel = document.getElementById('intervalLabel');
 
 // Lädt den aktuellen Status aus chrome.storage und updatet das UI
 async function updateStatus() {
-  const data = await new Promise(resolve => {
-    chrome.storage.local.get(
-      ['lastCleanTime', 'cleanCount'],
-      resolve
-    );
-  });
+  try {
+    const data = await new Promise(resolve => {
+      chrome.storage.local.get(
+        [STORAGE_KEYS.lastCleanTime, STORAGE_KEYS.cleanCount, STORAGE_KEYS.intervalMinutes],
+        resolve
+      );
+    });
 
-  const { lastCleanTime = 0, cleanCount = 0 } = data;
+    const lastCleanTime = data[STORAGE_KEYS.lastCleanTime] ?? 0;
+    const cleanCount = data[STORAGE_KEYS.cleanCount] ?? 0;
+    const intervalMinutes = Number.isFinite(data[STORAGE_KEYS.intervalMinutes]) && data[STORAGE_KEYS.intervalMinutes] > 0
+      ? data[STORAGE_KEYS.intervalMinutes]
+      : DEFAULT_INTERVAL_MINUTES;
+    const intervalMs = intervalMinutes * 60 * 1000;
 
-  // Anzahl updaten
-  cleanCountEl.textContent = cleanCount;
+    // Anzahl updaten
+    cleanCountEl.textContent = cleanCount;
+    // Intervall-Label updaten (in Tagen, mind. 1 Dezimalstelle wenn < 1 Tag)
+    if (intervalLabel) {
+      const days = intervalMinutes / (60 * 24);
+      intervalLabel.textContent = days >= 1 ? String(Math.round(days)) : days.toFixed(1).replace('.', ',');
+    }
 
-  // Wenn es noch keinen Vorgang gab, belassen wir die "unbekannt"-Anzeige
-  if (lastCleanTime > 0) {
-    const lastDate = new Date(lastCleanTime);
-    lastCleanEl.textContent = lastDate.toLocaleString();
+    // Wenn es noch keinen Vorgang gab, belassen wir die "unbekannt"-Anzeige
+    if (lastCleanTime > 0) {
+      const lastDate = new Date(lastCleanTime);
+      lastCleanEl.textContent = lastDate.toLocaleString();
+      lastCleanEl.title = lastDate.toString();
 
-    // Nächste Löschung = lastCleanTime + Intervall
-    const nextTime = lastCleanTime + FOUR_DAYS_MS;
-    const now = Date.now();
+      // Nächste Löschung = lastCleanTime + Intervall
+      const nextTime = lastCleanTime + intervalMs;
+      const now = Date.now();
 
-    // relative Anzeige: „in x Tagen“ oder „vor x Tagen“
-    const diff = nextTime - now;
-    nextCleanEl.textContent = formatRelative(diff);
-  } else {
-    // Zeige geplanten Alarm, falls vorhanden (noch nie bereinigt)
-    showNextFromAlarmIfAvailable();
+      // relative Anzeige: „in x Tagen“ oder „vor x Tagen“
+      const diff = nextTime - now;
+      nextCleanEl.textContent = formatRelative(diff);
+      nextCleanEl.title = new Date(nextTime).toString();
+    } else {
+      // Zeige geplanten Alarm, falls vorhanden (noch nie bereinigt)
+      lastCleanEl.title = '';
+      await showNextFromAlarmIfAvailable();
+    }
+  } catch (_) {
+    // Im Popup schweigsam scheitern
   }
 }
 
@@ -65,11 +83,13 @@ async function showNextFromAlarmIfAvailable() {
     if (alarm?.scheduledTime) {
       const diff = alarm.scheduledTime - Date.now();
       nextCleanEl.textContent = formatRelative(diff);
+      nextCleanEl.title = new Date(alarm.scheduledTime).toString();
     }
   } catch (_) {
     // ignoriere Fehler in der Popup-Ansicht
   }
 }
+
 
 // Klick auf „Jetzt löschen“
 cleanNowBtn.addEventListener('click', () => {

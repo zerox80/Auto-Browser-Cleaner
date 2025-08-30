@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Auto Browser Cleaner",
-  "version": "1.0",
-  "description": "Löscht automatisch alle 4 Tage Browserdaten",
+  "version": "1.1",
+  "description": "Löscht Browserdaten in konfigurierbaren Intervallen (Standard: alle 4 Tage)",
   "permissions": [
     "browsingData",
     "storage",
@@ -19,10 +19,17 @@
       "128": "icon128.png"
     }
   },
+  "options_page": "options.html",
   "icons": {
     "16": "icon16.png",
     "48": "icon48.png",
     "128": "icon128.png"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "rujbin@proton.me",
+      "strict_min_version": "115.0"
+    }
   },
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"

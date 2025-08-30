@@ -62,9 +62,9 @@
     <div>Anzahl Löschungen: <strong><span id="cleanCount">0</span></strong></div>
   </div>
   <button class="clean-button" id="cleanNowBtn">Jetzt löschen</button>
-  <p class="message success" id="successMessage">Erfolgreich gelöscht!</p>
-  <p class="message error"   id="errorMessage">Fehler beim Löschen.</p>
-  <p class="info-text">Automatische Löschung alle 4 Tage aktiv</p>
+  <p class="message success" id="successMessage" role="status" aria-live="polite">Erfolgreich gelöscht!</p>
+  <p class="message error"   id="errorMessage" role="alert" aria-live="assertive">Fehler beim Löschen.</p>
+  <p class="info-text">Automatische Löschung alle <strong><span id="intervalLabel">4</span> Tage</strong> aktiv · <a href="options.html" target="_blank" rel="noopener">Einstellungen</a></p>
 
   <script src="constants.js"></script>
   <script src="popup.js"></script>

@@ -1,22 +1,22 @@
 # Auto Browser Cleaner
 
-**Auto Browser Cleaner** is a lightweight Chrome extension that automatically clears your browsing data every four days and also provides a one-click manual “Clean Now” button.
+**Auto Browser Cleaner** is a lightweight Chrome/Firefox extension that automatically clears your browsing data on a schedule (default: every four days) and also provides a one-click manual “Clean Now” button.
 
 ---
 
 ## Features
 
 - **Automatic Cleaning**
-  Clears history, cache, cookies & download history automatically every four days.
+  Clears history, cache, cookies & download history automatically on a configurable schedule (default: every four days).
 
 - **Manual Cleaning**  
   Click the toolbar icon → **Clean Now** to clear data on demand.  
 
 - **Zero Configuration**  
-  Works out of the box—no settings required.  
+  Works out of the box—no settings required. You can optionally adjust the interval under Settings.  
 
 - **Customizable**
-  Easily tweak which data types to clear and adjust the cleanup interval in `background.js` and `constants.js`.
+  Adjust the cleanup interval via the built-in Options page, or tweak data types in `background.js` and shared constants in `constants.js`.
 - **Security First**
   Built with a strict Content Security Policy to block remote code execution.
 - **Friendly Status**
@@ -28,9 +28,10 @@
 
 ### Prerequisites
 
-- Google Chrome (v57+)
+- Google Chrome/Chromium (v88+ recommended)
+- Mozilla Firefox (v115+)
 
-### Installation
+### Installation (Chrome/Chromium)
 
 1. Clone or download this repository:
 
@@ -50,12 +51,30 @@
 
 5. The Auto Browser Cleaner icon should now appear in your toolbar.
 
+### Installation (Firefox on Linux/Windows/macOS)
+
+1. Open Firefox and navigate to:
+
+   ```
+   about:debugging#/runtime/this-firefox
+   ```
+
+2. Click "Load Temporary Add-on" and select the project's `manifest.json`.
+3. The extension will load temporarily (until you restart Firefox). For permanent install, package and sign the add-on using `web-ext`.
+
+Optional dev workflow with `web-ext`:
+
+```bash
+npm i -g web-ext
+web-ext run --verbose --source-dir .
+```
+
 ---
 
 ## Usage
 
 - **Automatic:**
-  The extension runs in the background every four days and clears your data.
+  The extension runs in the background on the chosen interval (default: every four days) and clears your data.
 
 - **Manual:**  
   Click the extension icon → click **Clean Now** in the popup.
@@ -64,11 +83,17 @@
 
 ## Configuration
 
-To adjust what gets cleared or change the time window:
+To adjust what gets cleared or change the schedule:
 
-1. Open `constants.js` to modify the cleaning interval. The constants are shared
-   between the background script and popup, so changes apply everywhere.
+1. Set the interval in the extension’s Options page (`options.html` or via the extension menu → Options). Intervals can be specified in minutes, hours or days. Changes apply immediately and alarms are rescheduled automatically.
 2. Open `background.js` to change the data types being removed.
+
+### Cross-Browser notes
+
+- The extension uses Manifest V3 with a background service worker (`background.js`).
+- A Firefox-specific section is included in `manifest.json` under `browser_specific_settings.gecko` (an ID is required to load temporary add-ons).
+- Data removal uses a robust fallback strategy per category for better Chrome/Firefox compatibility.
+ - Options page is registered via `manifest.json` → `options_page` and stores `intervalMinutes` in `chrome.storage.local`.
 
 ---
 

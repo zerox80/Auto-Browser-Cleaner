@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>Einstellungen · Auto Browser Cleaner</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { max-width: 720px; margin: 24px auto; padding: 0 16px; font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; }
+    h1 { font-size: 22px; margin: 0 0 12px; }
+    .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; }
+    .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    label { font-weight: 600; }
+    input[type=number] { width: 120px; padding: 8px; font-size: 14px; }
+    select { padding: 8px; font-size: 14px; }
+    button { padding: 10px 14px; background: #006aff; color: #fff; border: 0; border-radius: 6px; cursor: pointer; }
+    .muted { color: #555; font-size: 13px; margin-top: 10px; }
+    .msg { margin-top: 10px; font-size: 13px; display: none; }
+    .msg.ok { color: green; }
+    .msg.err { color: red; }
+  </style>
+</head>
+<body>
+  <h1>🧹 Auto Browser Cleaner – Einstellungen</h1>
+  <div class="card">
+    <div class="row" style="margin-bottom:12px;">
+      <label for="value">Intervall:</label>
+      <input id="value" type="number" min="0.1" step="0.1" />
+      <select id="unit">
+        <option value="days">Tage</option>
+        <option value="hours">Stunden</option>
+        <option value="minutes">Minuten</option>
+      </select>
+      <button id="saveBtn">Speichern</button>
+    </div>
+    <div class="muted">Bestimmt, wie oft automatisch bereinigt wird. Änderungen gelten sofort.</div>
+    <div id="msgOk" class="msg ok">Gespeichert ✔️</div>
+    <div id="msgErr" class="msg err">Fehler beim Speichern</div>
+  </div>
+
+  <script src="constants.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>
