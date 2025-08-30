@@ -123,6 +123,17 @@ Auto-Browser-Cleaner/
 
 ---
 
+## Changelog
+
+### 1.2
+- Clamp interval to safe bounds (min 15 minutes, max 365 days).
+- Align alarm scheduling to the intended cadence using `when` + `periodInMinutes` to avoid drift.
+- Popup prefers the actual alarm’s scheduled time for “Nächste Löschung”, with a computed fallback.
+- Options page clamps values and shows feedback when the value was adjusted.
+- Minor logging improvements.
+
+---
+
 ## Contributing
 
 Contributions, issues & feature requests are welcome!  

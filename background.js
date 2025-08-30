@@ -11,9 +11,11 @@ async function getIntervalMinutes() {
   const { [STORAGE_KEYS.intervalMinutes]: intervalMinutes } = await new Promise((resolve) => {
     chrome.storage.local.get([STORAGE_KEYS.intervalMinutes], resolve);
   });
-  return Number.isFinite(intervalMinutes) && intervalMinutes > 0
+  const raw = Number.isFinite(intervalMinutes) && intervalMinutes > 0
     ? intervalMinutes
     : DEFAULT_INTERVAL_MINUTES;
+  // Clamp to configured bounds
+  return Math.min(Math.max(raw, MIN_INTERVAL_MINUTES), MAX_INTERVAL_MINUTES);
 }
 
 
@@ -114,10 +116,25 @@ async function clearAllBrowserData(forceAllTime = false) {
 /** Schedule or reschedule the periodic auto-clean alarm */
 async function scheduleAutoClean() {
   const minutes = await getIntervalMinutes();
+  const intervalMs = minutes * 60 * 1000;
+  // Try to align first run to lastCleanTime + interval; otherwise schedule from now + interval
+  const { lastCleanTime = 0 } = await new Promise((resolve) => {
+    chrome.storage.local.get([STORAGE_KEYS.lastCleanTime], resolve);
+  });
+  const now = Date.now();
+  let firstWhen = now + intervalMs;
+  if (lastCleanTime > 0) {
+    const candidate = lastCleanTime + intervalMs;
+    // If candidate is in the past, push to the next future slot preserving cadence
+    firstWhen = candidate > now ? candidate : now + Math.max(60 * 1000, intervalMs / 10);
+  }
+
   chrome.alarms.clear(ALARM_NAME, () => {
-    chrome.alarms.create(ALARM_NAME, { periodInMinutes: minutes });
+    // Provide 'when' for first fire and set periodic cadence
+    chrome.alarms.create(ALARM_NAME, { when: firstWhen, periodInMinutes: minutes });
     console.info('[Cleaner] Alarm scheduled/rescheduled', {
       name: ALARM_NAME,
+      firstWhen: new Date(firstWhen).toISOString(),
       periodInMinutes: minutes
     });
   });

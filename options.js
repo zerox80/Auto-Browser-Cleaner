@@ -35,6 +35,10 @@ function toMinutes(value, unit) {
   }
 }
 
+function clampMinutes(m) {
+  return Math.min(Math.max(m, MIN_INTERVAL_MINUTES), MAX_INTERVAL_MINUTES);
+}
+
 async function saveInterval() {
   const valueEl = document.getElementById('value');
   const unitEl = document.getElementById('unit');
@@ -49,9 +53,13 @@ async function saveInterval() {
     return;
   }
   try {
+    const clamped = clampMinutes(minutes);
     await new Promise((resolve) => {
-      chrome.storage.local.set({ [STORAGE_KEYS.intervalMinutes]: minutes }, resolve);
+      chrome.storage.local.set({ [STORAGE_KEYS.intervalMinutes]: clamped }, resolve);
     });
+    ok.textContent = clamped !== minutes
+      ? `Gespeichert ✔️ (angepasst auf ${clamped} Minuten)`
+      : 'Gespeichert ✔️';
     ok.style.display = 'block';
   } catch (_) {
     err.style.display = 'block';
@@ -61,3 +69,4 @@ async function saveInterval() {
 // Initialize
 loadInterval();
 document.getElementById('saveBtn').addEventListener('click', saveInterval);
+

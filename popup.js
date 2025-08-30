@@ -40,14 +40,15 @@ async function updateStatus() {
       lastCleanEl.textContent = lastDate.toLocaleString();
       lastCleanEl.title = lastDate.toString();
 
-      // Nächste Löschung = lastCleanTime + Intervall
-      const nextTime = lastCleanTime + intervalMs;
+      // Fallback: Nächste Löschung = lastCleanTime + Intervall
+      const fallbackNext = lastCleanTime + intervalMs;
       const now = Date.now();
+      const fallbackDiff = fallbackNext - now;
+      nextCleanEl.textContent = formatRelative(fallbackDiff);
+      nextCleanEl.title = new Date(fallbackNext).toString();
 
-      // relative Anzeige: „in x Tagen“ oder „vor x Tagen“
-      const diff = nextTime - now;
-      nextCleanEl.textContent = formatRelative(diff);
-      nextCleanEl.title = new Date(nextTime).toString();
+      // Bevorzuge geplanten Alarm, falls vorhanden
+      await showNextFromAlarmIfAvailable();
     } else {
       // Zeige geplanten Alarm, falls vorhanden (noch nie bereinigt)
       lastCleanEl.title = '';
