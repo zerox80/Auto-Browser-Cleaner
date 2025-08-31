@@ -1,129 +1,151 @@
 # Auto Browser Cleaner
 
-**Auto Browser Cleaner** is a lightweight Chrome/Firefox extension that automatically clears your browsing data on a schedule (default: every four days) and also provides a one-click manual “Clean Now” button.
+Ein schlankes Browser-Add-on für Chrome/Chromium und Firefox, das Browserdaten automatisch in frei wählbaren Intervallen löscht (Standard: alle 4 Tage) und zusätzlich einen Button für die manuelle Sofort-Löschung bietet.
 
----
+—
 
-## Features
+## Funktionen
 
-- **Automatic Cleaning**
-  Clears history, cache, cookies & download history automatically on a configurable schedule (default: every four days).
+- Automatische Bereinigung: Entfernt Verlauf, Cache, Cookies, Download-Verlauf u. a. in einem konfigurierbaren Intervall.
+- Manuelle Bereinigung: Im Popup auf „Jetzt löschen“ klicken, um sofort alles zu bereinigen.
+- Sofort einsatzbereit: Funktioniert ohne Konfiguration. Optional kann das Intervall in den Einstellungen angepasst werden.
+- Anpassbar: Intervall über die Options-Seite, Datenarten technisch in `background.js`/`constants.js`.
+- Sicherheit: Strenge Content Security Policy; keine Remote-Skripte, keine externen Anfragen.
+- Statusanzeige: Popup zeigt letzte, nächste Bereinigung und Zähler an.
 
-- **Manual Cleaning**  
-  Click the toolbar icon → **Clean Now** to clear data on demand.  
+—
 
-- **Zero Configuration**  
-  Works out of the box—no settings required. You can optionally adjust the interval under Settings.  
+## Installation
 
-- **Customizable**
-  Adjust the cleanup interval via the built-in Options page, or tweak data types in `background.js` and shared constants in `constants.js`.
-- **Security First**
-  Built with a strict Content Security Policy to block remote code execution.
-- **Friendly Status**
-  Popup displays last and next cleanup using human-friendly relative time.
+Voraussetzungen
 
----
+- Chrome/Chromium ab v88
+- Firefox ab v115
 
-## Getting Started
+Chrome/Chromium (Entwicklermodus)
 
-### Prerequisites
-
-- Google Chrome/Chromium (v88+ recommended)
-- Mozilla Firefox (v115+)
-
-### Installation (Chrome/Chromium)
-
-1. Clone or download this repository:
-
+1. Repository klonen oder herunterladen:
+   
    ```bash
    git clone https://github.com/zerox80/Auto-Browser-Cleaner.git
    ```
+2. `chrome://extensions` öffnen
+3. Entwicklermodus aktivieren (oben rechts)
+4. „Entpackte Erweiterung laden“ wählen und den Projektordner auswählen
 
-2. Open Chrome and navigate to:
+Firefox (temporär laden)
 
-   ```
-   chrome://extensions
-   ```
+1. `about:debugging#/runtime/this-firefox` öffnen
+2. „Temporäres Add-on laden“ wählen und `manifest.json` auswählen
+3. Für eine dauerhafte Installation bitte mit `web-ext` bauen/signieren
 
-3. Enable **Developer mode** (toggle in the top right).
-
-4. Click **Load unpacked**, then select the project’s root folder.
-
-5. The Auto Browser Cleaner icon should now appear in your toolbar.
-
-### Installation (Firefox on Linux/Windows/macOS)
-
-1. Open Firefox and navigate to:
-
-   ```
-   about:debugging#/runtime/this-firefox
-   ```
-
-2. Click "Load Temporary Add-on" and select the project's `manifest.json`.
-3. The extension will load temporarily (until you restart Firefox). For permanent install, package and sign the add-on using `web-ext`.
-
-Optional dev workflow with `web-ext`:
+Optional: Entwicklungs-Workflow mit `web-ext`
 
 ```bash
 npm i -g web-ext
 web-ext run --verbose --source-dir .
 ```
 
----
+—
 
-## Usage
+## Verwendung
 
-- **Automatic:**
-  The extension runs in the background on the chosen interval (default: every four days) and clears your data.
+- Automatisch: Die Bereinigung läuft im Hintergrund in dem eingestellten Intervall (Standard: 4 Tage).
+- Manuell: Erweiterungs-Icon anklicken → im Popup auf „Jetzt löschen“ klicken.
 
-- **Manual:**  
-  Click the extension icon → click **Clean Now** in the popup.
+—
 
----
+## Einstellungen & Anpassungen
 
-## Configuration
+Intervall ändern
 
-To adjust what gets cleared or change the schedule:
+1. Options-Seite öffnen (Rechtsklick auf das Icon → „Optionen“ oder `options.html`).
+2. Intervall in Minuten/Stunden/Tagen wählen und speichern. Änderungen greifen sofort; Alarme werden automatisch neu geplant.
 
-1. Set the interval in the extension’s Options page (`options.html` or via the extension menu → Options). Intervals can be specified in minutes, hours or days. Changes apply immediately and alarms are rescheduled automatically.
-2. Open `background.js` to change the data types being removed.
+Welche Daten werden gelöscht?
 
-### Cross-Browser notes
+- Per Standard werden u. a. Cache, Cookies, Verlauf, Formulardaten, Downloads, IndexedDB, LocalStorage, Service Worker gelöscht. Die genaue Zusammenstellung ist in `background.js` hinterlegt (Fallback je Kategorie für bessere Cross-Browser-Kompatibilität).
 
-- The extension uses Manifest V3 with a background service worker (`background.js`).
-- A Firefox-specific section is included in `manifest.json` under `browser_specific_settings.gecko` (an ID is required to load temporary add-ons).
-- Data removal uses a robust fallback strategy per category for better Chrome/Firefox compatibility.
- - Options page is registered via `manifest.json` → `options_page` and stores `intervalMinutes` in `chrome.storage.local`.
+Technische Hinweise
 
----
+- Manifest V3 mit Service Worker (`background.js`).
+- Firefox-spezifische Einstellungen unter `browser_specific_settings.gecko` in `manifest.json` (ID erforderlich).
+- Gemeinsame Konstanten in `constants.js` (z. B. `DEFAULT_INTERVAL_MINUTES`, Grenzen `MIN_…`/`MAX_…`).
 
-## File Structure
+—
+
+## Berechtigungen (Erklärung)
+
+- `browsingData`: Zum Löschen von Cache, Cookies, Verlauf usw.
+- `storage`: Zum lokalen Speichern von Einstellungen und Status (Intervall, letzter Lauf, Zähler).
+- `alarms`: Zum Planen der automatischen Bereinigung.
+
+Hinweis: Es werden keine Host-Berechtigungen (Website-Zugriffe) angefordert.
+
+—
+
+## Datenschutz
+
+Diese Erweiterung verarbeitet Ihre Daten ausschließlich lokal im Browser. Es werden keine personenbezogenen Daten an Server übertragen oder mit Dritten geteilt. Details siehe [Datenschutz](./Datenschutz.md).
+
+Gespeicherte lokale Daten
+
+- `intervalMinutes`: Ihr gewähltes Intervall in Minuten
+- `lastCleanTime`: Zeitstempel der letzten Bereinigung
+- `cleanCount`: Anzahl der durchgeführten Bereinigungen
+
+—
+
+## Kompatibilität & Grenzen
+
+- Chrome/Chromium und Firefox werden unterstützt. Je nach Browser-Version können einzelne Löschkategorien unterschiedlich verfügbar sein; es existiert ein Fallback je Kategorie.
+- Bei sehr kurzen Intervallen (unter 15 Minuten) wird das Minimum technisch auf 15 Minuten geklammert.
+
+—
+
+## Fehlerbehebung
+
+- „Nichts passiert im Popup“: Prüfen, ob im Browser unter Einstellungen → „Datenschutz & Sicherheit“ Berechtigungen für Erweiterungen eingeschränkt sind.
+- „Letzter/Nächster Lauf = unbekannt“: Wird nach der ersten erfolgreichen Bereinigung gesetzt.
+- „In Firefox beim Neustart weg“: Temporäre Add-ons werden beim Browserneustart entfernt; bitte mit `web-ext` signieren/installieren.
+
+—
+
+## Entwicklung
+
+1. Als entpackte Erweiterung laden (siehe Installation oben)
+2. Quellcode ändern
+3. Auf `chrome://extensions` neu laden bzw. `web-ext` verwenden
+
+Projektstruktur
 
 ```
 Auto-Browser-Cleaner/
-├── icon16.png        # 16×16 toolbar icon
-├── icon48.png        # 48×48 toolbar icon
-├── icon128.png       # 128×128 Chrome Web Store icon
-├── icon.svg          # Source vector icon
-├── manifest.json     # Extension metadata & permissions
-├── background.js     # Clears browsing data on startup
-├── constants.js      # Shared constants (cleanup interval)
-├── popup.html        # Manual clean UI
-├── popup.js          # Popup logic (“Clean Now” handler)
-└── LICENSE           # MIT License
+├── icon16.png
+├── icon48.png
+├── icon128.png
+├── icon.svg
+├── manifest.json
+├── background.js
+├── constants.js
+├── popup.html
+├── popup.js
+├── options.html
+├── options.js
+└── LICENSE
 ```
 
----
+—
 
-## Development
+## Lizenz & Kontakt
 
-1. Clone the repo and load as unpacked in Developer Mode (see above).
-2. Make your changes to the source files.
-3. Reload the extension on `chrome://extensions`.
+- Lizenz: MIT (siehe `LICENSE`)
+- Autor: zerox80
+- Kontakt: rujbin@proton.me
 
----
+—
 
-## Changelog
+## Änderungsverlauf
 
 ### 1.2
 - Clamp interval to safe bounds (min 15 minutes, max 365 days).
